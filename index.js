@@ -28,17 +28,25 @@ const readAndParse = filepath => {
 
 const cwd = path.resolve(folder);
 
+const configFile = path.join(cwd, '.modlatestrc');
+const config = (() => {
+  if (!fs.existsSync(configFile)) {
+    return {};
+  }
+  return readAndParse(configFile);
+})();
+
 async function main() {
   const pkg = readAndParse(path.join(folder, 'package.json'));
 
   const dependencies = pkg.dependencies || {};
-  const depArgs = Object.keys(dependencies).map(key => key + '@latest');
+  const depArgs = Object.keys(dependencies).map(key => `${key}@${config[key] || 'latest'}`);
 
   console.log('Installing latest dependencies\n');
   await pCmd(spawn('npm', ['i', '-S', ...depArgs], { cwd, stdio: 'inherit' }), 'failed to install latest dependencies');
 
   const devDependencies = pkg.devDependencies || {};
-  const devDepArgs = Object.keys(devDependencies).map(key => key + '@latest');
+  const devDepArgs = Object.keys(devDependencies).map(key => `${key}@${config[key] || 'latest'}`);
 
   console.log('\nInstalling latest development dependencies\n');
   await pCmd(
